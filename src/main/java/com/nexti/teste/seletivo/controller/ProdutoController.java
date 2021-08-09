@@ -1,36 +1,51 @@
 package com.nexti.teste.seletivo.controller;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nexti.teste.seletivo.model.ProdutoModel;
 import com.nexti.teste.seletivo.repository.ProdutoRepository;
 
 @RestController
+@RequestMapping(value = "/produto")
 public class ProdutoController {
 	@Autowired
 	private ProdutoRepository repository;
 	
-	public List<ProdutoModel> findAllProdutos() {
-		return repository.findAll();
+	@GetMapping(path = "/all")
+	public ResponseEntity<Iterable<ProdutoModel>> getAllProdutos() {
+		return ResponseEntity.ok(repository.findAll());
 	}
 	
-	public Optional<ProdutoModel> getProdutoById(Long idProduto) {
-		return repository.findById(idProduto);
+	@GetMapping(path = "/id/{idProduto}")
+	public ResponseEntity<ProdutoModel> getProdutoById(@PathVariable Long idProduto) {
+		return ResponseEntity.of(repository.findById(idProduto));
 	}
 	
-	public ProdutoModel saveProduto(ProdutoModel produto) {
-		return repository.save(produto);
+	@PostMapping
+	public ResponseEntity<ProdutoModel> saveProduto(@RequestBody ProdutoModel produto) {
+		return ResponseEntity.ok(repository.save(produto));
 	}
 	
-	public void deleteProduto(Long idProduto) {
+	@DeleteMapping(path = "/id/{idProduto}")
+	public ResponseEntity<Object> deleteProduto(@PathVariable Long idProduto) {
 		repository.deleteById(idProduto);
+		return ResponseEntity.ok(null);
 	}
 	
-	public ProdutoModel updateProduto(Long idProduto, ProdutoModel produtoAtualizado) {
+	@PutMapping(path = "/id/{idProduto}")
+	public ResponseEntity<ProdutoModel> updateProduto(@PathVariable Long idProduto, @RequestBody ProdutoModel produtoAtualizado) {
 		Optional<ProdutoModel> produtoSalvo = repository.findById(idProduto);
 		
 		if (produtoSalvo.isPresent()) {
@@ -44,9 +59,9 @@ public class ProdutoController {
 			
 			repository.save(produto);
 			
-			return produto;
+			return ResponseEntity.ok(produto);
 		}
 		
-		return null;
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 }

@@ -5,6 +5,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nexti.teste.seletivo.model.ItemPedidoModel;
@@ -13,6 +22,7 @@ import com.nexti.teste.seletivo.repository.ItemPedidoRepository;
 import com.nexti.teste.seletivo.repository.PedidoRepository;
 
 @RestController
+@RequestMapping(value = "/pedido")
 public class PedidoController {
 
 	@Autowired
@@ -21,23 +31,30 @@ public class PedidoController {
 	@Autowired
 	private ItemPedidoRepository itemPedidoRepository;
 
-	public List<PedidoModel> findAllPedidos() {
-		return pedidoRepository.findAll();
+	@GetMapping(path = "/all")
+	public ResponseEntity<Iterable<PedidoModel>> getAllPedidos() {
+		return ResponseEntity.ok(pedidoRepository.findAll());
 	}
 
-	public Optional<PedidoModel> findPedidoById(Long idPedido) {
-		return pedidoRepository.findById(idPedido);
+	@GetMapping(path = "/id/{idPedido}")
+	public ResponseEntity<PedidoModel> getPedidoById(@PathVariable Long idPedido) {
+		return ResponseEntity.of(pedidoRepository.findById(idPedido));
 	}
 
-	public PedidoModel savePedido(PedidoModel pedido) {
-		return pedidoRepository.save(pedido);
+	@PostMapping
+	public ResponseEntity<PedidoModel> savePedidos(@RequestBody PedidoModel pedido) {
+		return ResponseEntity.ok(pedidoRepository.save(pedido));
 	}
 
-	public void deletePedido(Long idPedido) {
+	@DeleteMapping(path = "/id/{idPedido}")
+	public ResponseEntity<Object> deletePedido(@PathVariable Long idPedido) {
 		pedidoRepository.deleteById(idPedido);
+		return ResponseEntity.ok(null);
 	}
 
-	public PedidoModel updatePedido(Long idPedido, PedidoModel pedidoAtualizado) {
+	@PutMapping(path = "/id/{idPedido}")
+	public ResponseEntity<PedidoModel> updatePedido(@PathVariable Long idPedido,
+			@RequestBody PedidoModel pedidoAtualizado) {
 		final Optional<PedidoModel> pedidoSalvo = pedidoRepository.findById(idPedido);
 
 		if (pedidoSalvo.isPresent()) {
@@ -49,13 +66,15 @@ public class PedidoController {
 			pedido.setVlTotalPedido(pedidoAtualizado.getVlTotalPedido());
 
 			pedidoRepository.save(pedido);
-			return pedido;
+			return ResponseEntity.ok(pedido);
 		}
 
-		return null;
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 
-	public PedidoModel dropItemPedidoByIdProduto(Long idPedido, Long idProduto) {
+	@DeleteMapping(path = "/pedido/produto/{idPedido}/{idProduto}")
+	public ResponseEntity<PedidoModel> dropItemPedidoByIdProduto(@PathVariable Long idPedido,
+			@PathVariable Long idProduto) {
 		Optional<PedidoModel> pedidoRealizado = pedidoRepository.findById(idPedido);
 
 		if (pedidoRealizado.isPresent()) {
@@ -65,22 +84,22 @@ public class PedidoController {
 					.map(ItemPedidoModel::getIdItemPedido).collect(Collectors.toList());
 
 			itemPedidoRepository.deleteAllById(itemPedidoParaRemocaoList);
-
-			return pedidoRepository.getById(idPedido);
+			return ResponseEntity.ok(pedidoRepository.getById(idPedido));
 		}
 
-		return null;
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 
-	public PedidoModel removerClienteFromPedido(Long idPedido, Long idCliente) {
+	@DeleteMapping(path = "/cliente-pedido/{idPedido}")
+	public ResponseEntity<PedidoModel> removerClienteFromPedido(@PathVariable Long idPedido) {
 		Optional<PedidoModel> pedidoRealizado = pedidoRepository.findById(idPedido);
 		if (pedidoRealizado.isPresent()) {
 			PedidoModel pedido = pedidoRealizado.get();
 			pedido.setCliente(null);
-			
-			return pedidoRepository.save(pedido);
+
+			return ResponseEntity.ok(pedidoRepository.save(pedido));
 		}
 
-		return null;
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 }
